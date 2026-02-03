@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Relationship Quiz Game (2 Players)</title>
+
+<style>
+:root{
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --border:#dbe3ee;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --blue:#60a5fa;
+  --blue-soft:#eaf2ff;
+  --danger:#991b1b;
+  --danger-border:#fecaca;
+  --danger-bg:#fff1f2;
+  --radius:14px;
+  --shadow: 0 10px 24px rgba(17,24,39,.08);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+.wrap{max-width:1100px;margin:0 auto;padding:20px}
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+h1{margin:0;font-size:22px}
+.sub{margin-top:4px;color:var(--muted);font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#fff;
+  font-size:14px;
+  cursor:pointer;
+}
+button.primary{background:var(--blue-soft);border-color:var(--blue)}
+button.danger{border-color:var(--danger-border);color:var(--danger)}
+button:disabled{opacity:.5;cursor:not-allowed}
+
+.grid{
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:16px;
+}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+}
+.meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:var(--blue-soft);
+  color:#2563eb;
+  font-size:12px;
+}
+.progress{
+  height:8px;
+  background:#e5e7eb;
+  border-radius:999px;
+  overflow:hidden;
+  margin:10px 0 14px;
+}
+.bar{height:100%;width:0%;background:var(--blue)}
+.qtext{font-size:18px;margin:10px 0 6px}
+.hint{font-size:13px;color:var(--muted)}
+
+.two{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:16px;
+}
+@media(max-width:700px){.two{grid-template-columns:1fr}}
+
+.player{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  background:#fff;
+}
+.player h3{margin:0 0 6px;font-size:14px}
+.name{
+  width:100%;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  margin-bottom:8px;
+}
+.choices{display:grid;gap:8px}
+.choice{
+  padding:10px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#f9fafb;
+  cursor:pointer;
+  user-select:none;
+  line-height:1.25;
+}
+.choice:hover{background:#eef4ff}
+
+/* Blind selection until reveal */
+.choice.selected{
+  background:#f9fafb;
+  border-color:var(--border);
+}
+
+/* After each player answers (before reveal), hide their choices */
+.player.answered .choices{display:none}
+.cover{
+  display:none;
+  padding:10px;
+  border-radius:10px;
+  background:#f1f5f9;
+  color:var(--muted);
+  font-size:13px;
+}
+.player.answered .cover{display:block}
+
+/* After reveal, show choices and highlight selection */
+.player.revealed .choices{display:grid}
+.player.revealed .cover{display:none}
+.player.revealed .choice.selected{
+  background:var(--blue-soft);
+  border-color:var(--blue);
+}
+
+.results{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid var(--border);
+  font-size:14px;
+}
+
+.chatlog{
+  height:320px;
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+  background:#f9fafb;
+}
+.msg{
+  margin-bottom:8px;
+  padding:8px;
+  border-radius:8px;
+  background:#fff;
+  border:1px solid var(--border);
+  font-size:13px;
+  white-space:pre-wrap;
+}
+.msg .metaLine{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  color:var(--muted);
+  font-size:11px;
+  margin-bottom:4px;
+}
+.chatbox{display:flex;gap:6px;margin-top:8px}
+select, textarea, input{
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px;
+  font-size:13px;
+  background:#fff;
+  color:var(--text);
+}
+textarea{flex:1;min-height:44px;resize:vertical}
+
+#errorBox{
+  display:none;
+  margin-bottom:12px;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid var(--danger-border);
+  background:var(--danger-bg);
+  color:var(--danger);
+  font-size:13px;
+}
+
+/* Setup screen */
+.setup{
+  display:block;
+  margin-bottom:12px;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+}
+.setup h2{margin:0 0 6px;font-size:16px}
+.setup .row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:10px;
+}
+@media(max-width:700px){.setup .row{grid-template-columns:1fr}}
+.setup .note{color:var(--muted);font-size:13px;margin-top:6px}
+.hidden{display:none !important}
+.smallnote{margin-top:10px;color:var(--muted);font-size:12px}
+
+.aiBox{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--border);
+}
+.aiGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:10px;
+}
+@media(max-width:700px){.aiGrid{grid-template-columns:1fr}}
+.checkboxRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:8px;
+  color:var(--muted);
+  font-size:13px;
+}
+.help{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.3;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div id="errorBox"></div>
+
+  <header>
+    <div>
+      <h1>Relationship Quiz Game</h1>
+      <div class="sub">Two players. Private answers. Reveal together. Then talk it through.</div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnStart">Start Game</button>
+      <button class="primary" id="btnMain" disabled>Reveal Answers</button>
+      <button class="primary" id="btnAI" disabled>AI: Add Next Question</button>
+      <button id="btnExport">Export Session</button>
+      <button id="btnClearChat" class="danger">Clear Chat</button>
+      <button id="btnReset" class="danger">Reset All</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div id="setupBox" class="setup">
+        <h2>Before you start</h2>
+        <div class="note">Enter names (optional). Then press <strong>Start Game</strong>.</div>
+
+        <div class="row">
+          <div>
+            <label for="name1" class="note">Player 1 name</label>
+            <input class="name" id="name1" placeholder="Player 1" />
+          </div>
+          <div>
+            <label for="name2" class="note">Player 2 name</label>
+            <input class="name" id="name2" placeholder="Player 2" />
+          </div>
+        </div>
+
+        <div class="note">Tip: each question is two clicks: <strong>Reveal Answers</strong> then <strong>Next Question</strong>.</div>
+
+        <div class="aiBox">
+          <div class="note"><strong>Optional: AI-generated follow-up questions</strong></div>
+
+          <div class="checkboxRow">
+            <input type="checkbox" id="aiEnable" />
+            <label for="aiEnable">Enable AI follow-up questions (adds new questions after reveals)</label>
+          </div>
+
+          <div class="aiGrid">
+            <div>
+              <label class="note" for="apiKey">OpenAI API key (kept in memory unless you choose “Remember”)</label>
+              <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off" />
+              <div class="checkboxRow">
+                <input type="checkbox" id="rememberKey" />
+                <label for="rememberKey">Remember API key on this device</label>
+              </div>
+              <div class="help">
+                Security note: storing keys in a browser is not safe for shared links or public hosting.
+                For anything beyond personal use, use a small server proxy.
+              </div>
+            </div>
+
+            <div>
+              <label class="note" for="modelSel">Model</label>
+              <select id="modelSel">
+                <option value="gpt-4o-mini">gpt-4o-mini</option>
+                <option value="gpt-4o">gpt-4o</option>
+              </select>
+
+              <label class="note" for="maxFollowups" style="display:block;margin-top:10px;">How many AI follow-up questions can be added?</label>
+              <select id="maxFollowups">
+                <option value="2">2</option>
+                <option value="4" selected>4</option>
+                <option value="6">6</option>
+              </select>
+
+              <div class="help" style="margin-top:10px;">
+                AI uses your revealed answers and recent chat to propose one new multiple-choice question (4 options),
+                designed to deepen values/conflict-resolution discussion.
+              </div>
+            </div>
+          </div>
+
+          <div class="help">
+            If the AI button does nothing, your browser may be blocking cross-site requests.
+            In that case, tell me and I will give you a tiny proxy server you can run locally.
+          </div>
+        </div>
+      </div>
+
+      <div class="meta">
+        <span class="pill" id="counter">Question 1 of 8</span>
+        <span class="pill" id="topicPill">Topic</span>
+        <span class="pill">Aligned <strong id="aligned">0</strong></span>
+        <span class="pill" id="modePill">Mode: Setup</span>
+      </div>
+
+      <div class="progress"><div class="bar" id="bar"></div></div>
+
+      <div class="qtext" id="q">Press “Start Game” to begin.</div>
+      <div class="hint" id="prompt">Your answers are hidden until both have answered and you reveal together.</div>
+
+      <div class="two">
+        <div class="player" id="p1">
+          <h3 id="p1Label">Player 1</h3>
+          <div class="cover" id="cover1">Answered. Waiting for reveal…</div>
+          <div class="choices" id="c1"></div>
+        </div>
+
+        <div class="player" id="p2">
+          <h3 id="p2Label">Player 2</h3>
+          <div class="cover" id="cover2">Answered. Waiting for reveal…</div>
+          <div class="choices" id="c2"></div>
+        </div>
+      </div>
+
+      <div class="results" id="results" style="display:none"></div>
+      <div class="smallnote">Tip: If it gets tense, pause. Each person gets one sentence: “What I meant was…” and “What I heard was…”</div>
+    </div>
+
+    <div class="card">
+      <div class="meta">
+        <span class="pill">Chat / Reflection Log</span>
+        <span class="pill">Auto-saved</span>
+      </div>
+
+      <div class="chatlog" id="chat"></div>
+
+      <div class="chatbox">
+        <select id="chatWho" aria-label="Speaker">
+          <option value="p1">Player 1</option>
+          <option value="p2">Player 2</option>
+          <option value="both">Both</option>
+        </select>
+        <textarea id="chatText" placeholder="Type reflections here. Example: I chose B because…"></textarea>
+        <button class="primary" id="btnSend">Send</button>
+      </div>
+
+      <div class="smallnote">Privacy: stored only in this browser unless you export.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const KEY = "relationship_game_v2_stable_ai";
+  const KEY_API = "relationship_game_api_key_optional";
+
+  const QUESTIONS_BASE = [
+    {
+      id:"values-1",
+      topic:"Core Values",
+      q:"You have a free Saturday. What feels most meaningful together?",
+      prompt:"Name the value underneath your choice. Ask your partner what their choice protects.",
+      o:["Uninterrupted quality time","Handle responsibilities together","Do something new or adventurous","Same space, separate activities"]
+    },
+    {
+      id:"conflict-1",
+      topic:"Conflict Style",
+      q:"A disagreement is escalating. What is your best move in the moment?",
+      prompt:"Agree on a rule you can both follow when emotions rise.",
+      o:["Take a short break then return","Stay and resolve it now","Shift to problem-solving steps","Name feelings first, then fix"]
+    },
+    {
+      id:"trust-1",
+      topic:"Trust and Repair",
+      q:"When you feel hurt, what repair works best for you?",
+      prompt:"Give one example of a repair that landed well, and one that did not.",
+      o:["Impact-focused apology","Consistent behavior change","Reassurance or affection immediately","Space first, then talk"]
+    },
+    {
+      id:"comm-1",
+      topic:"Communication",
+      q:"How do you prefer a sensitive issue be raised?",
+      prompt:"Create a shared script you both can use.",
+      o:["Direct and brief","Gentle with reassurance first","Written first so I can process","Planned calm conversation"]
+    },
+    {
+      id:"support-1",
+      topic:"Support",
+      q:"When you are stressed, what support do you want most?",
+      prompt:"If you differ, set a default response and a backup plan.",
+      o:["Practical help (tasks off my plate)","Listening without fixing","Encouragement and confidence","Space and fewer demands"]
+    },
+    {
+      id:"boundaries-1",
+      topic:"Boundaries",
+      q:"A boundary is crossed. What response feels most respectful and effective?",
+      prompt:"State a boundary that is clear, kind, and enforceable.",
+      o:["State boundary and consequence calmly","Ask questions, then set limit","Emphasize impact emotionally","Pull back and let actions speak"]
+    },
+    {
+      id:"money-1",
+      topic:"Money and Priorities",
+      q:"You get an unexpected $2,000. What feels most responsible right now?",
+      prompt:"Ask: what are we protecting, building, or enjoying?",
+      o:["Save or invest for security","Pay down debt or pressure","Shared experience or trip","Improve daily life (home/tools)"]
+    },
+    {
+      id:"future-1",
+      topic:"Future Vision",
+      q:"Which goal best matches the next 6 months of your relationship?",
+      prompt:"Turn the goal into one weekly habit you can keep.",
+      o:["More consistency and reliability","Better conflict skills and faster repair","More fun and shared experiences","Deeper intimacy and vulnerability"]
+    }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;");
+  }
+
+  function nowTime(){
+    const d = new Date();
+    return d.toLocaleString([], { month:"short", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+  }
+
+  function showError(msg){
+    const box = $("errorBox");
+    box.style.display = "block";
+    box.textContent = msg;
+  }
+  function clearError(){
+    const box = $("errorBox");
+    box.style.display = "none";
+    box.textContent = "";
+  }
+
+  window.addEventListener("error", (e) => {
+    showError("Page error: " + (e.message || "Unknown error") + ". If you see this, copy the message to me.");
+  });
+
+  const defaultState = () => ({
+    started: false,
+    i: 0,
+    a1: null,
+    a2: null,
+    revealed: false,
+    aligned: 0,
+    alignedCounted: {},
+    names: { p1:"Player 1", p2:"Player 2" },
+    chat: [],
+    lastWho: "p1",
+
+    // AI-related
+    aiEnabled: false,
+    aiModel: "gpt-4o-mini",
+    aiMaxFollowups: 4,
+    aiAddedCount: 0,
+    extraQuestions: [],
+
+    // history of revealed answers for AI prompting / export
+    history: [] // { qid, topic, q, o, a1, a2, at }
+  });
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(!raw) return defaultState();
+      const s = JSON.parse(raw);
+      return { ...defaultState(), ...s };
+    }catch(_){
+      return defaultState();
+    }
+  }
+
+  let state = loadState();
+
+  // API key is stored separately (optional) and is not placed into state by default.
+  let apiKeyMemory = "";
+
+  function loadApiKeyIfRemembered(){
+    try{
+      const remembered = localStorage.getItem(KEY_API);
+      if(remembered) {
+        apiKeyMemory = remembered;
+        $("apiKey").value = remembered;
+        $("rememberKey").checked = true;
+      }
+    }catch(_){}
+  }
+
+  function saveState(){
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }
+
+  function hasAnswer(v){
+    return v !== null && v !== undefined; // 0 is valid
+  }
+
+  function allQuestions(){
+    return QUESTIONS_BASE.concat(state.extraQuestions || []);
+  }
+
+  function currentQ(){
+    const qs = allQuestions();
+    const idx = Math.max(0, Math.min(state.i, qs.length - 1));
+    return qs[idx];
+  }
+
+  function syncNames(){
+    const n1 = ($("name1").value || "").trim() || "Player 1";
+    const n2 = ($("name2").value || "").trim() || "Player 2";
+    state.names.p1 = n1;
+    state.names.p2 = n2;
+
+    $("p1Label").textContent = n1;
+    $("p2Label").textContent = n2;
+
+    $("chatWho").options[0].text = n1;
+    $("chatWho").options[1].text = n2;
+  }
+
+  function drawChoices(containerId, selected, setFn){
+    const q = currentQ();
+    const box = $(containerId);
+    box.innerHTML = "";
+    q.o.forEach((text, idx) => {
+      const d = document.createElement("div");
+      d.className = "choice" + (selected === idx ? " selected" : "");
+      d.textContent = text;
+      d.addEventListener("click", () => setFn(idx));
+      box.appendChild(d);
+    });
+  }
+
+  function renderChat(){
+    const box = $("chat");
+    box.innerHTML = "";
+    state.chat.forEach(m => {
+      const whoLabel =
+        m.who === "p1" ? state.names.p1 :
+        m.who === "p2" ? state.names.p2 :
+        "Both";
+
+      const div = document.createElement("div");
+      div.className = "msg";
+      div.innerHTML =
+        "<div class='metaLine'><span>" + escapeHtml(whoLabel) + " • " + escapeHtml(m.qid) + "</span><span>" + escapeHtml(m.at) + "</span></div>" +
+        escapeHtml(m.text);
+      box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;
+    $("chatWho").value = state.lastWho || "p1";
+  }
+
+  function setModeLabel(){
+    if(!state.started){
+      $("modePill").textContent = "Mode: Setup";
+      $("btnMain").textContent = "Reveal Answers";
+      $("btnMain").disabled = true;
+      return;
+    }
+    if(!state.revealed){
+      $("modePill").textContent = "Mode: Answering";
+      $("btnMain").textContent = "Reveal Answers";
+    }else{
+      $("modePill").textContent = "Mode: Revealed";
+      $("btnMain").textContent = "Next Question";
+    }
+  }
+
+  function canUseAI(){
+    if(!state.aiEnabled) return false;
+    if(state.aiAddedCount >= state.aiMaxFollowups) return false;
+    const key = getApiKey();
+    if(!key) return false;
+    return true;
+  }
+
+  function updateAIControls(){
+    $("aiEnable").checked = !!state.aiEnabled;
+    $("modelSel").value = state.aiModel || "gpt-4o-mini";
+    $("maxFollowups").value = String(state.aiMaxFollowups || 4);
+
+    // AI add button: only meaningful after reveal
+    $("btnAI").disabled = !(state.started && state.revealed && canUseAI());
+  }
+
+  function render(){
+    clearError();
+    syncNames();
+
+    $("setupBox").classList.toggle("hidden", state.started);
+
+    $("aligned").textContent = String(state.aligned);
+
+    const qs = allQuestions();
+    const q = currentQ();
+
+    $("counter").textContent = "Question " + (state.i + 1) + " of " + qs.length;
+    $("topicPill").textContent = q.topic;
+
+    $("bar").style.width = Math.round((state.i / qs.length) * 100) + "%";
+
+    if(!state.started){
+      $("q").textContent = "Press “Start Game” to begin.";
+      $("prompt").textContent = "Your answers are hidden until both have answered and you reveal together.";
+      $("results").style.display = "none";
+      $("results").innerHTML = "";
+      $("p1").className = "player";
+      $("p2").className = "player";
+      $("c1").innerHTML = "";
+      $("c2").innerHTML = "";
+      setModeLabel();
+      renderChat();
+      updateAIControls();
+      return;
+    }
+
+    $("q").textContent = q.q;
+    $("prompt").textContent = q.prompt;
+
+    drawChoices("c1", state.a1, (v)=>{ state.a1 = v; saveState(); render(); });
+    drawChoices("c2", state.a2, (v)=>{ state.a2 = v; saveState(); render(); });
+
+    const p1Answered = hasAnswer(state.a1);
+    const p2Answered = hasAnswer(state.a2);
+
+    $("p1").className = "player" + (p1Answered && !state.revealed ? " answered" : "") + (state.revealed ? " revealed" : "");
+    $("p2").className = "player" + (p2Answered && !state.revealed ? " answered" : "") + (state.revealed ? " revealed" : "");
+
+    setModeLabel();
+
+    $("btnMain").disabled = !(p1Answered && p2Answered);
+
+    if(state.revealed){
+      const n1 = state.names.p1;
+      const n2 = state.names.p2;
+      const same = state.a1 === state.a2;
+
+      $("results").style.display = "block";
+      $("results").innerHTML =
+        "<strong>Reveal</strong><br><br>" +
+        "<strong>" + escapeHtml(n1) + ":</strong> " + escapeHtml(q.o[state.a1]) + "<br>" +
+        "<strong>" + escapeHtml(n2) + ":</strong> " + escapeHtml(q.o[state.a2]) + "<br><br>" +
+        "<strong>Result:</strong> " + (same ? "Aligned" : "Different") + "<br>" +
+        "<span style='color:var(--muted)'>Discuss: What value or need sits underneath each choice? What compromise could honor both?</span>" +
+        (state.aiEnabled ? "<br><br><span style='color:var(--muted)'>AI: You can add a tailored follow-up question with the “AI: Add Next Question” button.</span>" : "");
+    }else{
+      $("results").style.display = "none";
+      $("results").innerHTML = "";
+    }
+
+    renderChat();
+    updateAIControls();
+  }
+
+  function startGame(){
+    state.started = true;
+    syncNames();
+    state.a1 = null;
+    state.a2 = null;
+    state.revealed = false;
+    const qs = allQuestions();
+    state.i = Math.max(0, Math.min(state.i, qs.length - 1));
+    saveState();
+    render();
+  }
+
+  function revealOrNext(){
+    if(!state.started) return;
+    if(!(hasAnswer(state.a1) && hasAnswer(state.a2))) return;
+
+    const q = currentQ();
+    const qs = allQuestions();
+
+    if(!state.revealed){
+      state.revealed = true;
+
+      if(state.a1 === state.a2 && !state.alignedCounted[q.id]){
+        state.aligned += 1;
+        state.alignedCounted[q.id] = true;
+      }
+
+      // Record in history once per question reveal
+      const already = (state.history || []).some(h => h.qid === q.id);
+      if(!already){
+        state.history.push({
+          qid: q.id,
+          topic: q.topic,
+          q: q.q,
+          o: q.o.slice(),
+          a1: state.a1,
+          a2: state.a2,
+          at: new Date().toISOString()
+        });
+      }
+
+      saveState();
+      render();
+      return;
+    }
+
+    // Next question
+    state.i += 1;
+
+    if(state.i >= qs.length){
+      alert("Finished. Export your session if you want to save it.");
+      state.i = qs.length - 1;
+      saveState();
+      render();
+      return;
+    }
+
+    state.a1 = null;
+    state.a2 = null;
+    state.revealed = false;
+    saveState();
+    render();
+  }
+
+  function sendChat(){
+    const txt = ($("chatText").value || "").trim();
+    if(!txt) return;
+
+    const who = $("chatWho").value;
+    state.lastWho = who;
+
+    const qid = state.started ? currentQ().id : "setup";
+    state.chat.push({ who, text: txt, at: nowTime(), qid });
+
+    $("chatText").value = "";
+    saveState();
+    renderChat();
+  }
+
+  function exportSession(){
+    syncNames();
+    const out = {
+      exportedAt: new Date().toISOString(),
+      state: state,
+      questions: allQuestions()
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "relationship-game-session.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }
+
+  function clearChat(){
+    if(!confirm("Clear chat only? Progress stays.")) return;
+    state.chat = [];
+    saveState();
+    render();
+  }
+
+  function resetAll(){
+    if(!confirm("Reset everything, including progress and chat?")) return;
+    localStorage.removeItem(KEY);
+    // optional: do not delete stored API key here
+    state = defaultState();
+    $("chatText").value = "";
+    render();
+  }
+
+  function getApiKey(){
+    // memory takes priority
+    const live = ($("apiKey").value || "").trim();
+    if(live) return live;
+    if(apiKeyMemory) return apiKeyMemory;
+    return "";
+  }
+
+  function onApiKeyInput(){
+    const v = ($("apiKey").value || "").trim();
+    apiKeyMemory = v;
+
+    if($("rememberKey").checked){
+      if(v) localStorage.setItem(KEY_API, v);
+      else localStorage.removeItem(KEY_API);
+    }else{
+      localStorage.removeItem(KEY_API);
+    }
+
+    updateAIControls();
+  }
+
+  function onRememberToggle(){
+    const v = ($("apiKey").value || "").trim();
+    if($("rememberKey").checked){
+      if(v) localStorage.setItem(KEY_API, v);
+    }else{
+      localStorage.removeItem(KEY_API);
+    }
+    updateAIControls();
+  }
+
+  function onAIEnableToggle(){
+    state.aiEnabled = $("aiEnable").checked;
+    saveState();
+    render();
+  }
+
+  function onModelChange(){
+    state.aiModel = $("modelSel").value;
+    saveState();
+    render();
+  }
+
+  function onMaxFollowupsChange(){
+    state.aiMaxFollowups = Number($("maxFollowups").value) || 4;
+    saveState();
+    render();
+  }
+
+  function recentChatSnippets(limit=6){
+    const items = (state.chat || []).slice(-limit);
+    return items.map(m => {
+      const who =
+        m.who === "p1" ? state.names.p1 :
+        m.who === "p2" ? state.names.p2 :
+        "Both";
+      return `${who}: ${m.text}`;
+    }).join("\n");
+  }
+
+  function buildAIPrompt(){
+    const q = currentQ();
+    const n1 = state.names.p1;
+    const n2 = state.names.p2;
+
+    const p1Choice = q.o[state.a1];
+    const p2Choice = q.o[state.a2];
+
+    const lastHistory = (state.history || []).slice(-3).map(h => {
+      const qTxt = h.q;
+      const p1 = h.o[h.a1];
+      const p2 = h.o[h.a2];
+      return `Q: ${qTxt}\n${n1}: ${p1}\n${n2}: ${p2}`;
+    }).join("\n\n");
+
+    const chat = recentChatSnippets(6);
+
+    return `
+You are designing a relationship quiz follow-up question for two partners.
+Goal: deepen values + conflict-resolution + repair skills. Avoid judgment. Keep it practical and emotionally intelligent.
+
+Create EXACTLY ONE new multiple-choice question with:
+- id: short unique string (prefix "ai-")
+- topic: short label
+- q: question text
+- prompt: one sentence that guides discussion
+- o: exactly 4 answer options (strings)
+
+Constraints:
+- No therapy disclaimers.
+- No explicit sexual content.
+- No mentions of self-harm.
+- Do not repeat any of the base questions.
+- Options should be balanced and not shame any choice.
+- The question should be relevant to the couple based on their recent answers.
+
+Return ONLY valid JSON, matching this schema:
+{
+  "id": "ai-...",
+  "topic": "...",
+  "q": "...",
+  "prompt": "...",
+  "o": ["...", "...", "...", "..."]
+}
+
+Context:
+Current question: ${q.q}
+${n1} chose: ${p1Choice}
+${n2} chose: ${p2Choice}
+
+Recent revealed history:
+${lastHistory || "(none yet)"}
+
+Recent chat:
+${chat || "(none)"}
+`.trim();
+  }
+
+  async function callOpenAIForQuestion(){
+    const key = getApiKey();
+    if(!key){
+      showError("Add your API key in the setup area to use AI questions.");
+      return null;
+    }
+
+    const model = state.aiModel || "gpt-4o-mini";
+    const prompt = buildAIPrompt();
+
+    // Using Responses API
+    // Note: Some browsers/environments may block this request. If it fails, use a local proxy.
+    const body = {
+      model,
+      input: [
+        { role: "system", content: "You generate structured JSON only." },
+        { role: "user", content: prompt }
+      ],
+      // Ask for JSON via structured output hinting in text.format (best effort).
+      text: {
+        format: {
+          type: "json_schema",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["id", "topic", "q", "prompt", "o"],
+            properties: {
+              id: { type: "string" },
+              topic: { type: "string" },
+              q: { type: "string" },
+              prompt: { type: "string" },
+              o: {
+                type: "array",
+                minItems: 4,
+                maxItems: 4,
+                items: { type: "string" }
+              }
+            }
+          }
+        }
+      },
+      max_output_tokens: 350
+    };
+
+    const resp = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + key
+      },
+      body: JSON.stringify(body)
+    });
+
+    if(!resp.ok){
+      const t = await resp.text().catch(()=> "");
+      throw new Error("OpenAI API error (" + resp.status + "): " + (t || resp.statusText));
+    }
+
+    const data = await resp.json();
+
+    // Try to extract text output in a resilient way
+    let outText = "";
+    if (data && Array.isArray(data.output)) {
+      for (const item of data.output) {
+        if (item && item.type === "message" && Array.isArray(item.content)) {
+          for (const c of item.content) {
+            if (c && c.type === "output_text" && typeof c.text === "string") {
+              outText += c.text;
+            }
+          }
+        }
+      }
+    }
+
+    if(!outText){
+      // fallback: maybe model returned in a different shape
+      outText = JSON.stringify(data);
+    }
+
+    // Parse JSON
+    let obj = null;
+    try{
+      obj = JSON.parse(outText);
+    }catch(_){
+      // Try to recover JSON if wrapped in markdown or extra text
+      const match = outText.match(/\{[\s\S]*\}/);
+      if(match){
+        obj = JSON.parse(match[0]);
+      }
+    }
+    return obj;
+  }
+
+  function validateQuestion(q){
+    if(!q || typeof q !== "object") return "No question returned.";
+    if(!q.id || !q.topic || !q.q || !q.prompt) return "Missing required fields.";
+    if(!Array.isArray(q.o) || q.o.length !== 4) return "Options must be exactly 4.";
+    if(String(q.id).length > 80) return "id too long.";
+    // Avoid collisions
+    const ids = new Set(allQuestions().map(x => x.id));
+    if(ids.has(q.id)) return "Duplicate id returned.";
+    return "";
+  }
+
+  async function addAIQuestion(){
+    if(!state.started || !state.revealed){
+      showError("Reveal answers first. Then you can add an AI follow-up question.");
+      return;
+    }
+    if(!canUseAI()){
+      showError("AI is not ready. Check: AI enabled, API key entered, and follow-up limit not exceeded.");
+      return;
+    }
+
+    $("btnAI").disabled = true;
+    $("btnAI").textContent = "AI: Generating…";
+
+    try{
+      const q = await callOpenAIForQuestion();
+      const err = validateQuestion(q);
+      if(err){
+        showError("AI question invalid: " + err);
+        return;
+      }
+
+      // Add to extra questions (appends to the end of the deck)
+      state.extraQuestions.push({
+        id: String(q.id),
+        topic: String(q.topic),
+        q: String(q.q),
+        prompt: String(q.prompt),
+        o: q.o.map(String)
+      });
+
+      state.aiAddedCount += 1;
+
+      // Save + re-render (counter total updates immediately)
+      saveState();
+      render();
+
+      // Show a small confirmation in results
+      $("results").style.display = "block";
+      $("results").innerHTML +=
+        "<br><br><strong>AI added a new question:</strong> " + escapeHtml(q.topic) +
+        "<br><span style='color:var(--muted)'>It will appear after you finish the current deck, unless you use Next to reach it.</span>";
+
+    }catch(e){
+      showError(String(e && e.message ? e.message : e));
+    }finally{
+      $("btnAI").textContent = "AI: Add Next Question";
+      updateAIControls();
+    }
+  }
+
+  // Wire up UI events
+  $("btnStart").addEventListener("click", startGame);
+  $("btnMain").addEventListener("click", revealOrNext);
+  $("btnAI").addEventListener("click", addAIQuestion);
+  $("btnSend").addEventListener("click", sendChat);
+  $("btnExport").addEventListener("click", exportSession);
+  $("btnClearChat").addEventListener("click", clearChat);
+  $("btnReset").addEventListener("click", resetAll);
+
+  $("name1").addEventListener("input", () => { syncNames(); saveState(); });
+  $("name2").addEventListener("input", () => { syncNames(); saveState(); });
+
+  $("chatText").addEventListener("keydown", (e) => {
+    if((e.ctrlKey || e.metaKey) && e.key === "Enter"){
+      e.preventDefault();
+      sendChat();
+    }
+  });
+
+  $("name1").addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); startGame(); }});
+  $("name2").addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); startGame(); }});
+
+  // AI settings events
+  $("aiEnable").addEventListener("change", onAIEnableToggle);
+  $("apiKey").addEventListener("input", onApiKeyInput);
+  $("rememberKey").addEventListener("change", onRememberToggle);
+  $("modelSel").addEventListener("change", onModelChange);
+  $("maxFollowups").addEventListener("change", onMaxFollowupsChange);
+
+  // Initialize
+  loadApiKeyIfRemembered();
+
+  // Restore AI settings to UI
+  $("aiEnable").checked = !!state.aiEnabled;
+  $("modelSel").value = state.aiModel || "gpt-4o-mini";
+  $("maxFollowups").value = String(state.aiMaxFollowups || 4);
+
+  render();
+})();
+</script>
+</body>
+</html>
