@@ -400,7 +400,15 @@ textarea{flex:1;min-height:44px;resize:vertical}
     </div>
   </div>
 </div>
-
+<div id="readmeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.25); padding:18px; z-index:9999;">
+  <div style="max-width:900px; margin:0 auto; background:#fff; border:1px solid #dbe3ee; border-radius:14px; padding:16px; max-height:85vh; overflow:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <strong>README</strong>
+      <button id="btnCloseReadme">Close</button>
+    </div>
+    <pre id="readmeBody" style="white-space:pre-wrap; font-family:inherit; margin-top:12px;"></pre>
+  </div>
+</div>
 <script>
 (function(){
   const KEY = "relationship_game_v2_stable_ai";
