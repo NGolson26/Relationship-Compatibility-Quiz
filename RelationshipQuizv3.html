@@ -407,7 +407,31 @@ textarea{flex:1;min-height:44px;resize:vertical}
   </div>
 </div>
 <script>
-(function(){
+const README_TEXT = `
+Relationship Quiz Game (2 Players)
+
+How to play
+1) Enter Player 1 and Player 2 names (optional).
+2) Click Start Game.
+3) Each player chooses an answer (answers stay hidden).
+4) Click Reveal Answers to see both answers.
+5) Talk through the prompt.
+6) Click Next Question to continue.
+7) Use the Chat / Reflection Log to write notes.
+8) Click Export Session to download your session.
+
+Buttons
+- Start Game: begins the quiz
+- Reveal Answers: shows both players’ answers after both have answered
+- Next Question: moves to the next question (only after reveal)
+- Export Session: downloads answers + chat
+- Clear Chat: clears chat only
+- Reset All: resets everything
+
+Privacy
+This app saves progress in your browser (local storage). Nothing is uploaded anywhere.
+`.trim();
+  (function(){
   const KEY = "relationship_game_v2_stable_ai";
   const KEY_API = "relationship_game_api_key_optional";
 
@@ -1141,6 +1165,29 @@ ${chat || "(none)"}
 
   render();
 })();
+function openReadme(){
+  document.getElementById("readmeBody").textContent = README_TEXT;
+  document.getElementById("readmeModal").style.display = "block";
+}
+function closeReadme(){
+  document.getElementById("readmeModal").style.display = "none";
+}
+
+document.getElementById("btnReadme").addEventListener("click", openReadme);
+document.getElementById("btnCloseReadme").addEventListener("click", closeReadme);
+
+document.getElementById("readmeModal").addEventListener("click", (e)=>{
+  if(e.target.id === "readmeModal") closeReadme();
+});
 </script>
+<div id="readmeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.25); padding:18px; z-index:9999;">
+  <div style="max-width:900px; margin:0 auto; background:#fff; border:1px solid #dbe3ee; border-radius:14px; padding:16px; max-height:85vh; overflow:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <strong>README</strong>
+      <button id="btnCloseReadme" class="primary">Close</button>
+    </div>
+    <pre id="readmeBody" style="white-space:pre-wrap; font-family:inherit; margin-top:12px;"></pre>
+  </div>
+</div>
 </body>
 </html>
